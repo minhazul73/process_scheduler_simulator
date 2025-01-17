@@ -1,7 +1,7 @@
 class Process {
   final String id;
   final int arrivalTime;
-  final int burstTime;
+  late final int burstTime;
   int? waitingTime;
   int? turnaroundTime;
 

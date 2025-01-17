@@ -176,8 +176,10 @@ class InputScreen extends StatelessWidget {
                         return;
                       }
                       try {
-                        // Perform the calculation and wait for it to complete
-                        await processController.calculate(algorithm);
+                        // Call calculate and wait for the process to complete
+                        await Future.delayed(const Duration(milliseconds: 100), () {
+                          processController.calculate(algorithm);
+                        });
 
                         print('Processes before navigating to simulation: ${processController.processes}');
                         // Navigate to the simulation screen after calculation

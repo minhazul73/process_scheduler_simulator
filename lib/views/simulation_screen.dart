@@ -4,11 +4,11 @@ import 'package:fl_chart/fl_chart.dart';
 import '../controllers/process_controller.dart';
 
 class SimulationScreen extends StatelessWidget {
-  final processController = Get.find<ProcessController>();
-  final isAnimationReady = false.obs; // Reactive variable for animation
-  final selectedProjection = 'Turnaround Time'.obs; // Track the selected projection
+  final ProcessController processController = Get.find<ProcessController>();
+  final RxBool isAnimationReady = false.obs; // Reactive variable for animation
+  final RxString selectedProjection = 'Turnaround Time'.obs; // Track the selected projection
 
-  SimulationScreen({Key? key}) : super(key: key) {
+  SimulationScreen({super.key}) {
     // Delay the animation trigger by 500ms
     Future.delayed(const Duration(milliseconds: 500), () {
       isAnimationReady.value = true;
@@ -22,7 +22,6 @@ class SimulationScreen extends StatelessWidget {
         return process.turnaroundTime?.toDouble() ?? 0;
       case 'Waiting Time':
         return process.waitingTime?.toDouble() ?? 0;
-      // Add more cases for other projections if needed
       default:
         return 0;
     }
@@ -32,13 +31,23 @@ class SimulationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Simulation', style: TextStyle(color: Colors.white),),
+        title: const Text(
+          'Simulation',
+          style: TextStyle(color: Colors.white),
+        ),
         automaticallyImplyLeading: false,
         backgroundColor: Colors.black,
         centerTitle: true,
       ),
       body: Obx(() {
-        processController.simulateFCFS(); // Ensure simulation happens
+        if (processController.processes.isEmpty) {
+          return const Center(
+            child: Text(
+              'No processes to simulate. \nAdd processes first.',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
+          );
+        }
 
         return Padding(
           padding: const EdgeInsets.all(16.0),
@@ -56,7 +65,6 @@ class SimulationScreen extends StatelessWidget {
                     onPressed: () => selectedProjection.value = 'Waiting Time',
                     child: const Text('Waiting Time'),
                   ),
-                  // Add more buttons as needed for other projections
                 ],
               ),
               const SizedBox(height: 16),
@@ -71,13 +79,13 @@ class SimulationScreen extends StatelessWidget {
                   return BarChart(
                     BarChartData(
                       maxY: processController.processes.isEmpty
-                        ? 5.0 // Default maxY if no processes are present
-                        : processController.processes
-                          .map((p) => getProjectionValue(selectedProjection.value, p) ?? 0) // Ensure valid numeric values
+                          ? 5.0 // Default maxY if no processes are present
+                          : processController.processes
+                          .map((p) => getProjectionValue(selectedProjection.value, p))
                           .reduce((a, b) => a > b ? a : b)
-                          .toDouble() + 2, // Add padding at the top
-
-                      minY: -1,
+                          .toDouble() +
+                          2, // Add padding at the top
+                      minY: 0,
                       barGroups: processController.processes.map((process) {
                         return BarChartGroupData(
                           x: int.tryParse(process.id.replaceAll('P', '')) ?? 0,
@@ -100,12 +108,11 @@ class SimulationScreen extends StatelessWidget {
                         touchTooltipData: BarTouchTooltipData(
                           tooltipMargin: 8,
                           tooltipRoundedRadius: 10,
-                          // tooltipBackgroundColor: Colors.blueAccent,
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
                             final process = processController.processes[groupIndex];
                             return BarTooltipItem(
                               'Process ${process.id}\n'
-                              '${selectedProjection.value}: ${getProjectionValue(selectedProjection.value, process)}',
+                                  '${selectedProjection.value}: ${getProjectionValue(selectedProjection.value, process)}',
                               const TextStyle(color: Colors.white),
                             );
                           },
@@ -129,31 +136,29 @@ class SimulationScreen extends StatelessWidget {
                             },
                           ),
                         ),
-                        topTitles: AxisTitles(
+                        topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        rightTitles: AxisTitles(
+                        rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
                       ),
                     ),
                     swapAnimationDuration: const Duration(milliseconds: 800),
                   );
-                  
                 }),
               ),
-              
-              Text("${selectedProjection.value} Chart",
+              Text(
+                "${selectedProjection.value} Chart",
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.normal,
                 ),
               ),
-              
               ElevatedButton(
                 onPressed: () {
                   Get.toNamed('/results');
-                  processController.clearProcesses(); 
+                  processController.clearProcesses();
                 },
                 child: const Text('HomePage'),
               ),
